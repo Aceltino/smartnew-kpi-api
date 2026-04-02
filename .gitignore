@@ -137,3 +137,24 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Security: Never commit environment files with secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+
+# Database backups
+*.sql
+*.sql.gz
+
+# Private keys and certificates
+*.pem
+*.key
+*.cert
+
+# IDE temporary files
+.DS_Store
+.vscode/settings.json
+.idea/workspace.xml

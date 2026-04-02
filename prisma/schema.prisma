@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model sofman_prospect_escala_trabalho {
+  id             Int      @id @db.Int
+  id_equipamento Int      @db.Int
+  data_programada DateTime @db.DateTime
+  inicio         DateTime @db.DateTime
+  termino        DateTime @db.DateTime
+
+  @@map("sofman_prospect_escala_trabalho")
+}
+
+model sofman_apontamento_paradas {
+  id              Int      @id @db.Int
+  id_ordem_servico Int      @db.Int
+  id_equipamento  Int      @db.Int
+  data_hora_stop  DateTime @db.DateTime
+  data_hora_start DateTime @db.DateTime
+
+  @@map("sofman_apontamento_paradas")
+}
+
+model controle_de_ordens_de_servico {
+  ID              Int @id @db.Int
+  ID_cliente      Int @db.Int
+  tipo_manutencao Int @db.Int
+
+  @@map("controle_de_ordens_de_servico")
+}
+
+model cadastro_de_equipamentos {
+  ID                Int    @id @db.Int
+  id_cliente        Int    @db.Int
+  id_familia        Int    @db.Int
+  equipamento_codigo String @db.VarChar(255)
+  descricao         String @db.VarChar(255)
+
+  @@map("cadastro_de_equipamentos")
+}
+
+model cadastro_de_familias_de_equipamento {
+  ID         Int    @id @db.Int
+  ID_cliente Int    @db.Int
+  familia    String @db.VarChar(255)
+
+  @@map("cadastro_de_familias_de_equipamento")
+}

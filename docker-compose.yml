@@ -1,0 +1,17 @@
+services:
+  smartnew-kpi-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3001:3001'
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  adminer:
+    image: adminer
+    container_name: smartnew-adminer
+    ports:
+      - '8080:8080'
+    restart: unless-stopped
