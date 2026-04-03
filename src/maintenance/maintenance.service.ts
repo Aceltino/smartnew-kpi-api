@@ -40,26 +40,26 @@ export class MaintenanceService {
         Prisma.sql`
           SELECT
             f.familia AS Familia,
-            COALESCE(esc.tempo_prev, 0) AS tempo_prev,
-            COALESCE(par.tempo_corretiva, 0) AS tempo_corretiva,
-            COALESCE(par.paradas, 0) AS Paradas,
+            COALESCE(SUM(esc.tempo_prev), 0) AS tempo_prev,
+            COALESCE(SUM(par.tempo_corretiva), 0) AS tempo_corretiva,
+            COALESCE(SUM(par.paradas), 0) AS Paradas,
             ROUND(
               CASE
-                WHEN COALESCE(esc.tempo_prev, 0) = 0 THEN 0
-                ELSE ((COALESCE(esc.tempo_prev, 0) - COALESCE(par.tempo_corretiva, 0)) / COALESCE(esc.tempo_prev, 0)) * 100
+                WHEN COALESCE(SUM(esc.tempo_prev), 0) = 0 THEN 0
+                ELSE ((COALESCE(SUM(esc.tempo_prev), 0) - COALESCE(SUM(par.tempo_corretiva), 0)) / COALESCE(SUM(esc.tempo_prev), 0)) * 100
               END,
               2
             ) AS DF,
             ROUND(
-              (COALESCE(esc.tempo_prev, 0) - COALESCE(par.tempo_corretiva, 0)) / NULLIF(COALESCE(par.paradas, 0), 0),
+              (COALESCE(SUM(esc.tempo_prev), 0) - COALESCE(SUM(par.tempo_corretiva), 0)) / NULLIF(COALESCE(SUM(par.paradas), 0), 0),
               2
             ) AS MTBF,
             ROUND(
-              COALESCE(par.tempo_corretiva, 0) / NULLIF(COALESCE(par.paradas, 0), 0),
+              COALESCE(SUM(par.tempo_corretiva), 0) / NULLIF(COALESCE(SUM(par.paradas), 0), 0),
               2
             ) AS MTTR
           FROM cadastro_de_familias_de_equipamento f
-          JOIN cadastro_de_equipamentos e
+          LEFT JOIN cadastro_de_equipamentos e
             ON e.id_familia = f.ID
             AND e.id_cliente = ${CLIENT_ID}
           LEFT JOIN (
@@ -84,6 +84,7 @@ export class MaintenanceService {
             GROUP BY par.id_equipamento
           ) par ON par.id_equipamento = e.ID
           WHERE f.ID_cliente = ${CLIENT_ID}
+          GROUP BY f.ID, f.familia
           ORDER BY f.familia;
         `,
       );
@@ -106,4 +107,3 @@ export class MaintenanceService {
     }
   }
 }
-

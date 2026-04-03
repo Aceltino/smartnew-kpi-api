@@ -9,7 +9,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { logger: ['error', 'warn', 'log'] });
 
   app.use(helmet());
-  app.enableCors({ origin: 'http://localhost:3001' });
+  
+  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+  app.enableCors({ origin: corsOrigin });
+  
   app.useGlobalGuards(new AuthGuard());
   app.useGlobalFilters(new HttpExceptionFilter());
   app.setGlobalPrefix('api');
@@ -23,7 +26,9 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(3001);
+  // Lê a porta pelo .env (essencial para deploys em nuvem como Render/Heroku)
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
 }
 
 bootstrap();
