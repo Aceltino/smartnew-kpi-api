@@ -7,19 +7,27 @@ WORKDIR /usr/src/app
 # Adicionamos dependências necessárias para compilação e Prisma
 RUN apk add --no-cache python3 make g++ openssl
 
+# Copia apenas os arquivos de configuração de pacotes primeiro
 COPY package.json package-lock.json* ./
 
-# Aumentamos o timeout para evitar ETIMEDOUT em redes instáveis
-RUN npm install --network-timeout=1000000
+# 🚨 A MÁGICA: Copia a pasta prisma ANTES da instalação!
+# Se você tiver um "postinstall: prisma generate" no package.json, ele não vai quebrar.
+COPY prisma ./prisma/
 
-# Copia o restante do código
+# Substituímos o "npm install" pelo "npm ci" com flags de otimização
+# O "npm ci" é mais rápido, estrito e consome muito menos RAM (perfeito para o Render)
+RUN npm ci --prefer-offline --no-audit
+
+# Gera o client do Prisma explicitamente (garantia de funcionamento no Alpine)
+RUN npx prisma generate
+
+# Copia o restante do código fonte
 COPY . .
 
-# Gera o client do Prisma e compila o NestJS
-RUN npx prisma generate
+# Compila o projeto NestJS
 RUN npm run build
 
-# Remove dependências dev para menor imagem de runtime
+# Remove dependências de desenvolvimento para deixar a imagem de runtime super leve
 RUN npm prune --production
 
 # ==========================================
@@ -28,11 +36,13 @@ RUN npm prune --production
 FROM node:20-alpine AS runner
 WORKDIR /usr/src/app
 
-# Openssl para suporte TLS/SSL de DB
+# Openssl para suporte TLS/SSL de banco de dados no Prisma
 RUN apk add --no-cache openssl
 
+# Usuário seguro para rodar a aplicação em produção
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
+# Copia SOMENTE o necessário do estágio de builder
 COPY --from=builder /usr/src/app/package.json ./
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist
@@ -44,6 +54,6 @@ EXPOSE 3001
 ENV NODE_ENV=production
 ENV PORT=3001
 
-# Para Render, assegure que DATABASE_URL tenha sslaccept=strict
-# Ex: mysql://user:pass@host:3306/db?sslaccept=strict
+# Comando de inicialização
+# Lembrete pro Render: garanta que a var de ambiente DATABASE_URL no dashboard esteja correta
 CMD ["node", "dist/main.js"]
